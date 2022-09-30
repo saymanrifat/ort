@@ -1,0 +1,77 @@
+# syntax=docker/dockerfile:1.4
+
+# Use at least version 1.4 above to be able to use linked copies, see e.g.
+# https://www.howtogeek.com/devops/how-to-accelerate-docker-builds-and-optimize-caching-with-copy-link/
+
+# Copyright (C) 2023 The ORT Project Authors (see <https://github.com/oss-review-toolkit/ort/blob/main/NOTICE>)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
+# License-Filename: LICENSE
+
+# Set this to a directory containing CRT-files for custom certificates that ORT and all build tools should know about.
+ARG CRT_FILES="*.crt"
+
+# Set this to the Java version to use in the base image (and to build and run ORT with).
+ARG JAVA_VERSION=17
+
+# Set this to the version ORT should report.
+ARG ORT_VERSION="DOCKER-SNAPSHOT"
+
+FROM eclipse-temurin:$JAVA_VERSION-jdk-alpine AS build
+
+# Repeat global arguments used in this stage.
+ARG CRT_FILES
+ARG ORT_VERSION
+
+COPY . /usr/local/src/ort
+COPY "$CRT_FILES" /tmp/certificates/
+
+WORKDIR /usr/local/src/ort
+
+RUN apk --update add --no-cache \
+    # Required to run the scripts.
+    bash \
+    # Required to run binaries linked against glibc (instead of musl libc).
+    gcompat \
+    # Required to run Node.
+    libstdc++
+
+# Persist whatever gets written to the Gradle user home to speed up subsequent builds.
+RUN --mount=type=cache,target=/tmp/.gradle/ \
+    export GRADLE_USER_HOME=/tmp/.gradle/ && \
+    scripts/export_proxy_certificates.sh /tmp/certificates/ && \
+    scripts/import_certificates.sh /tmp/certificates/ && \
+    scripts/set_gradle_proxy.sh && \
+    ./gradlew --no-daemon --stacktrace -Pversion=$ORT_VERSION :cli:installDist :helper-cli:startScripts
+
+FROM eclipse-temurin:$JAVA_VERSION-jdk-alpine AS run
+
+# Repeat global arguments used in this stage.
+ARG ORT_VERSION
+
+COPY --from=build --link /usr/local/src/ort/cli/build/install/ort /opt/ort
+
+# Support to run the helper-cli like `docker run --entrypoint /opt/ort/bin/orth ort`.
+COPY --from=build --link /usr/local/src/ort/helper-cli/build/scripts/orth /opt/ort/bin/
+COPY --from=build --link /usr/local/src/ort/helper-cli/build/libs/helper-cli-$ORT_VERSION.jar /opt/ort/lib/
+
+# Add required command line tools.
+RUN apk --update add --no-cache \
+    rtx
+
+# Check that all requirements are met.
+RUN /opt/ort/bin/ort requirements
+
+ENTRYPOINT ["/opt/ort/bin/ort"]
