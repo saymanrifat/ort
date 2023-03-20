@@ -37,6 +37,7 @@ kotest = "5.5.5"
 kotlinxCoroutines = "1.6.4"
 kotlinxHtml = "0.8.0"
 kotlinxSerialization = "1.5.0"
+ktoml = "0.4.1"
 ktor = "2.2.4"
 log4jApi = "2.20.0"
 log4jApiKotlin = "1.2.0"
@@ -120,6 +121,8 @@ kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", 
 kotlinxHtml = { module = "org.jetbrains.kotlinx:kotlinx-html-jvm", version.ref = "kotlinxHtml" }
 kotlinxSerializationCore = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerialization" }
 kotlinxSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+ktomlCore = { module = "com.akuleshov7:ktoml-core", version.ref = "ktoml" }
+ktomlFile = { module = "com.akuleshov7:ktoml-file", version.ref = "ktoml" }
 ktorClientCore = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktorClientOkHttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 # @keep this library which is only being used via force().
@@ -157,5 +160,6 @@ xz = { module = "org.tukaani:xz", version.ref = "xz" }
 exposed = ["exposedCore", "exposedDao", "exposedJdbc", "exposedJavaTime"]
 hoplite = ["hopliteCore", "hopliteYaml"]
 kotlinxSerialization = ["kotlinxSerializationCore", "kotlinxSerializationJson"]
+ktoml = ["ktomlCore", "ktomlFile"]
 maven = ["mavenCore", "mavenCompat"]
 mavenResolver = ["mavenResolverConnectorBasic", "mavenResolverTransportFile", "mavenResolverTransportHttp", "mavenResolverTransportWagon"]

@@ -17,9 +17,13 @@
  * License-Filename: LICENSE
  */
 
+@Suppress("DSL_SCOPE_VIOLATION") // See https://youtrack.jetbrains.com/issue/KTIJ-19369.
 plugins {
     // Apply core plugins.
     `java-library`
+
+    // Apply third-party plugins.
+    alias(libs.plugins.kotlinSerialization)
 }
 
 dependencies {
@@ -27,12 +31,7 @@ dependencies {
 
     implementation(project(":downloader"))
 
-    implementation(libs.toml4j)
-    constraints {
-        implementation("com.google.code.gson:gson:2.10.1") {
-            because("Earlier versions have vulnerabilities.")
-        }
-    }
+    implementation(libs.bundles.ktoml)
 
     funTestImplementation(testFixtures(project(":analyzer")))
 }

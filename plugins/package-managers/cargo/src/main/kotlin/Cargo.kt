@@ -21,9 +21,8 @@
 
 package org.ossreviewtoolkit.plugins.packagemanagers.cargo
 
+import com.akuleshov7.ktoml.Toml
 import com.fasterxml.jackson.databind.JsonNode
-
-import com.moandjiezana.toml.Toml
 
 import java.io.File
 
@@ -106,6 +105,7 @@ class Cargo(
             return emptyMap()
         }
 
+        Toml.decodeFromString<CargoLockFile>
         val contents = Toml().read(lockfile)
         return when (contents.getLong("version")) {
             3L -> {
