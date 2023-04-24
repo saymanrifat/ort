@@ -51,8 +51,8 @@ RUN apk --update add --no-cache \
 # Persist whatever gets written to the Gradle user home to speed up subsequent builds.
 RUN --mount=type=cache,target=/tmp/.gradle/ \
     export GRADLE_USER_HOME=/tmp/.gradle/ && \
-    scripts/export_proxy_certificates.sh /tmp/certificates/ && \
-    scripts/import_certificates.sh /tmp/certificates/ && \
+    #scripts/export_proxy_certificates.sh /tmp/certificates/ && \
+    #scripts/import_certificates.sh /tmp/certificates/ && \
     scripts/set_gradle_proxy.sh && \
     ./gradlew --no-daemon --stacktrace -Pversion=$ORT_VERSION :cli:installDist :helper-cli:startScripts
 
@@ -68,8 +68,21 @@ COPY --from=build --link /usr/local/src/ort/helper-cli/build/scripts/orth /opt/o
 COPY --from=build --link /usr/local/src/ort/helper-cli/build/libs/helper-cli-$ORT_VERSION.jar /opt/ort/lib/
 
 # Add required command line tools.
-RUN apk --update add --no-cache \
+RUN apk --update add --no-cache -X https://dl-cdn.alpinelinux.org/alpine/edge/community \
+    # Required to run rtx.
+    bash \
+    curl \
+    git \
+    # The rtx "Runtime Executor" is an asdf clone written in Rust.
     rtx
+
+RUN RTX_DEBUG=1 RUST_BACKTRACE=full rtx install \
+  #bower \ # No repository found for plugin bower
+  #cargo \ # No repository found for plugin cargo
+  #cocoapods \ # bundle: command not found
+  #composer # No repository found for plugin composer
+  #conan || true # Failed listing remote versions for plugin conan: error running list-all: exited with code 1
+  python
 
 # Check that all requirements are met.
 RUN /opt/ort/bin/ort requirements
