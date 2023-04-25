@@ -22,3 +22,7 @@
 	path = abc
 	url = https://github.com/oss-review-toolkit/ort-config.git
 	branch = fviernau/test
+[submodule "other/efg"]
+	path = other/efg
+	url = https://github.com/oss-review-toolkit/ort-config.git
+	branch = fviernau/test
