@@ -18,3 +18,7 @@
 	path = plugins/package-managers/pub/src/funTest/assets/projects/external/dart-http
 	url = https://github.com/dart-lang/http.git
 	ignore = untracked
+[submodule "abc"]
+	path = abc
+	url = https://github.com/oss-review-toolkit/ort-config.git
+	branch = fviernau/test
