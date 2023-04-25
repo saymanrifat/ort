@@ -24,9 +24,17 @@ import kotlinx.coroutines.runBlocking
 import org.apache.logging.log4j.kotlin.Logging
 
 import org.ossreviewtoolkit.model.ArtifactProvenance
+import org.ossreviewtoolkit.model.Identifier
 import org.ossreviewtoolkit.model.KnownProvenance
+import org.ossreviewtoolkit.model.Package
 import org.ossreviewtoolkit.model.Provenance
+import org.ossreviewtoolkit.model.RemoteArtifact
 import org.ossreviewtoolkit.model.RepositoryProvenance
+import org.ossreviewtoolkit.model.SourceCodeOrigin
+import org.ossreviewtoolkit.model.VcsInfo
+import org.ossreviewtoolkit.model.VcsType
+import org.ossreviewtoolkit.model.toYaml
+import org.ossreviewtoolkit.scanner.utils.DefaultWorkingTreeCache
 import org.ossreviewtoolkit.scanner.utils.WorkingTreeCache
 
 /**
@@ -102,4 +110,54 @@ class DefaultNestedProvenanceResolver(
             }
         }
     }
+}
+
+
+fun main() {
+    val pkg = Package.EMPTY.copy(
+        id = Identifier("Maven:ort:ort:1.0.0"),
+        vcsProcessed = VcsInfo(
+            type = VcsType.GIT,
+            url = "https://github.com/oss-review-toolkit/ort.git",
+            path = "",
+            revision = "fviernau/test"
+        )
+    )
+
+    val workingTreeCache = DefaultWorkingTreeCache()
+
+    val ppr = DefaultPackageProvenanceResolver(DummyProvenanceStorage(), workingTreeCache)
+    val npr = DefaultNestedProvenanceResolver(
+        DummyNestedProvenanceStorage(),
+        workingTreeCache
+    )
+
+    val rp = ppr.resolveProvenance(pkg, listOf(SourceCodeOrigin.VCS))
+    println(rp.toYaml())
+    val np = npr.resolveNestedProvenance(rp)
+    println(np.toYaml())
+}
+
+internal class DummyNestedProvenanceStorage : NestedProvenanceStorage {
+    override fun readNestedProvenance(root: RepositoryProvenance): NestedProvenanceResolutionResult? = null
+    override fun putNestedProvenance(root: RepositoryProvenance, result: NestedProvenanceResolutionResult) {
+        /** no-op */
+    }
+}
+
+internal class DummyProvenanceStorage : PackageProvenanceStorage {
+    override fun readProvenance(id: Identifier, sourceArtifact: RemoteArtifact): PackageProvenanceResolutionResult? =
+        null
+
+    override fun readProvenance(id: Identifier, vcs: VcsInfo): PackageProvenanceResolutionResult? = null
+
+    override fun readProvenances(id: Identifier): List<PackageProvenanceResolutionResult> = emptyList()
+
+    override fun putProvenance(id: Identifier, vcs: VcsInfo, result: PackageProvenanceResolutionResult) { /** no-op */ }
+
+    override fun putProvenance(
+        id: Identifier,
+        sourceArtifact: RemoteArtifact,
+        result: PackageProvenanceResolutionResult
+    ) { /** no-op */ }
 }
