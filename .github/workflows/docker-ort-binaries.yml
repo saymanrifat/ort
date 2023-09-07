@@ -15,7 +15,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # License-Filename: LICENSE
 
-name: Ort Binaries Container
+name: Binary Image
 
 on:
     push:
@@ -26,7 +26,7 @@ on:
             - main
     workflow_dispatch:
     workflow_run:
-        workflows: ["Ort Docker Base Image"]
+        workflows: ["Base Image"]
         types:
             - completed
 
@@ -71,7 +71,7 @@ jobs:
                 with:
                     context: .
                     target: ortbin
-                    push: true
+                    push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
                     load: false
                     build-args: |
                         ORT_VERSION=${{ env.ORT_VERSION }}
