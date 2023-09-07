@@ -30,6 +30,9 @@ on:
             - 'Ort Binaries Container'
             - 'Ort Python Container'
             - 'Ort NodeJS Container'
+            - 'Ort Ruby Container'
+            - 'Ort Rust Container'
+            - 'Ort Golang Container'
         types:
             - completed
 
@@ -88,3 +91,8 @@ jobs:
                     labels: ${{ steps.meta.outputs.labels }}
                     build-contexts: |
                         ort=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/ortbin:latest
+                        nodejs=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/nodejs:latest
+                        python=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/python:latest
+                        rust=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/rust:latest
+                        ruby=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/ruby:latest
+                        golang=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/golang:latest
