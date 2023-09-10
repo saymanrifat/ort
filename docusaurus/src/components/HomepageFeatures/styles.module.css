@@ -3,9 +3,13 @@
   align-items: center;
   padding: 2rem 0;
   width: 100%;
+  background-color: #eeeeee;
+}
+
+[data-theme='dark'] .features {
+  background-color: #111111;
 }
 
 .featureSvg {
   height: 200px;
-  width: 200px;
 }
