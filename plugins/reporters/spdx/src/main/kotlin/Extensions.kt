@@ -170,15 +170,16 @@ internal fun Package.toSpdxPackage(
             else -> concludedLicense.nullOrBlankToSpdxNoassertionOrNone()
         },
         licenseDeclared = declaredLicensesProcessed.toSpdxDeclaredLicense(),
-        licenseInfoFromFiles = licenseInfoResolver.resolveLicenseInfo(id)
-            .filterExcluded()
-            .filter(LicenseView.ONLY_DETECTED)
-            .map { resolvedLicense ->
-                resolvedLicense.license.takeIf { it.isValid(SpdxExpression.Strictness.ALLOW_DEPRECATED) }
-                    .nullOrBlankToSpdxNoassertionOrNone()
-            }
-            .distinct()
-            .sorted(),
+        licenseInfoFromFiles = emptyList<String>().takeIf { packageVerificationCode == null } ?:
+            licenseInfoResolver.resolveLicenseInfo(id)
+                .filterExcluded()
+                .filter(LicenseView.ONLY_DETECTED)
+                .map { resolvedLicense ->
+                    resolvedLicense.license.takeIf { it.isValid(SpdxExpression.Strictness.ALLOW_DEPRECATED) }
+                        .nullOrBlankToSpdxNoassertionOrNone()
+                }
+                .distinct()
+                .sorted(),
         packageVerificationCode = packageVerificationCode,
         name = id.name,
         summary = description.nullOrBlankToSpdxNone(),
