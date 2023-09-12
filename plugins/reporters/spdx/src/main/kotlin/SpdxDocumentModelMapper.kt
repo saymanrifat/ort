@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.logging.log4j.kotlin.Logging
 
+import org.ossreviewtoolkit.model.Identifier
 import org.ossreviewtoolkit.model.OrtResult
 import org.ossreviewtoolkit.model.SourceCodeOrigin.ARTIFACT
 import org.ossreviewtoolkit.model.SourceCodeOrigin.VCS
@@ -64,21 +65,21 @@ internal object SpdxDocumentModelMapper : Logging {
 
         val projects = ortResult.getProjects(omitExcluded = true, includeSubProjects = false).sortedBy { it.id }
         val projectPackages = projects.map { project ->
-            val spdxProjectPackage = project.toPackage().toSpdxPackage(
+            project.toPackage().toSpdxPackage(
                 SpdxPackageType.PROJECT,
                 licenseInfoResolver,
                 ortResult
             )
+        }
 
-            ortResult.getDependencies(project.id, 1).mapTo(relationships) { dependency ->
-                SpdxRelationship(
-                    spdxElementId = spdxProjectPackage.spdxId,
+        ortResult.getRootProjectsForFirstLevelDependencies().forEach { (pkgId, rootProjectIds) ->
+            rootProjectIds.forEach { rootProjectId ->
+                relationships += SpdxRelationship(
+                    spdxElementId = rootProjectId.toSpdxId(SpdxPackageType.PROJECT),
                     relationshipType = SpdxRelationship.Type.DEPENDS_ON,
-                    relatedSpdxElement = dependency.toSpdxId()
+                    relatedSpdxElement = pkgId.toSpdxId(SpdxPackageType.BINARY_PACKAGE)
                 )
             }
-
-            spdxProjectPackage
         }
 
         val files = mutableListOf<SpdxFile>()
@@ -168,4 +169,26 @@ internal object SpdxDocumentModelMapper : Logging {
             files = files
         ).addExtractedLicenseInfo(licenseTextProvider)
     }
+}
+
+/**
+ * Return a mapping from the identifiers of all non-excluded first level dependencies to the identifiers of the
+ * non-excluded root projects they correspond to.
+ */
+private fun OrtResult.getRootProjectsForFirstLevelDependencies(): Map<Identifier, Set<Identifier>> {
+    val result = mutableMapOf<Identifier, MutableSet<Identifier>>()
+
+    getProjects(omitExcluded = true).map { it.id }.forEach { rootProjectId ->
+        val subProjectIds = getDependencies(rootProjectId).filter { isProject(it) && !isExcluded(it) }
+
+        val firstLevelDependencies = (subProjectIds + rootProjectId).flatMapTo(mutableSetOf()) { projectId ->
+            getDependencies(projectId, maxLevel = 1).filter { isPackage(it) && !isExcluded(it) }
+        }
+
+        firstLevelDependencies.forEach { pkgId ->
+            result.getOrPut(pkgId) { mutableSetOf() } += rootProjectId
+        }
+    }
+
+    return result
 }
